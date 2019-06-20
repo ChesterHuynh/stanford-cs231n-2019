@@ -88,7 +88,6 @@ class TwoLayerNet(object):
         
         H, cache1 = affine_relu_forward(X, self.params['W1'], self.params['b1'])
         scores, cache2 = affine_forward(H, self.params['W2'], self.params['b2'])
-        
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -204,9 +203,29 @@ class FullyConnectedNet(object):
         # parameters should be initialized to zeros.                               #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-        pass
-
+        
+        # TODO: if time, try Xavier Initialization 
+        # We consider num_layers = num hidden layers + 1 FC layer
+        for i in range(self.num_layers):
+            W_i = "W%d" % (i + 1)
+            b_i = "b%d" % (i + 1)
+            
+            if i == (self.num_layers - 1):
+                # Output layer
+                self.params[W_i] = weight_scale * np.random.randn(hidden_dims[-1], 
+                                                                  num_classes)
+                self.params[b_i] = np.zeros(num_classes)
+            else:
+                if i == 0:
+                    # First layer
+                    self.params[W_i] = weight_scale * np.random.randn(input_dim, hidden_dims[0])
+                    self.params[b_i] = np.zeros(hidden_dims[0])
+                else:
+                    # Hidden layers
+                    self.params[W_i] = weight_scale * np.random.randn(hidden_dims[i-1],
+                                                                      hidden_dims[i])
+                    self.params[b_i] = np.zeros(hidden_dims[i])
+                    
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -268,7 +287,25 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        # Forward pass
+        caches = {}
+        
+        # We don't want to include the last layer in this loop since we only have
+        # to apply an affine to it.
+        for i in range(self.num_layers - 1):
+            W_i = "W%d" % (i + 1)
+            b_i = "b%d" % (i + 1)
+            
+            if i == 0:
+                out = X
+            if self.normalization == "batchnorm":
+                pass
+            else:
+                out, caches[i+1] = affine_relu_forward(out, self.params[W_i], 
+                                                       self.params[b_i])
+        W_i = "W%d" % (self.num_layers)
+        b_i = "b%d" % (self.num_layers)
+        scores, caches[self.num_layers] = affine_forward(out, self.params[W_i], self.params[b_i])
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -295,8 +332,21 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
-
+        # Backprop
+        loss, dscores = softmax_loss(scores, y)
+        for i in range(self.num_layers, 0, -1):
+            W_i = "W%d" %(i)
+            b_i = "b%d" %(i)
+            # Regularization term
+            loss += 0.5 * self.reg * np.sum(np.square(self.params[W_i]))
+                                            
+            # Last layer only affine_backwards
+            if i == self.num_layers:
+                dout, grads[W_i], grads[b_i] = affine_backward(dscores, caches[i])
+            else:
+                dout, grads[W_i], grads[b_i] = affine_relu_backward(dout, caches[i])
+            grads[W_i] += self.reg * self.params[W_i]
+                                            
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #

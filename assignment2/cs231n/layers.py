@@ -26,7 +26,7 @@ def affine_forward(x, w, b):
     # will need to reshape the input into rows.                               #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****\
-
+    
     out = x.reshape(x.shape[0], -1).dot(w) + b # Flatten images into row vectors
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
