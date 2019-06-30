@@ -151,7 +151,15 @@ def adam(w, dw, config=None):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    config['t'] += 1
+    
+    # Reference: http://cs231n.github.io/neural-networks-3/#sgd
+    config['m'] = config['beta1']*config['m'] + (1-config['beta1'])*dw
+    config['v'] = config['beta2']*config['v'] + (1-config['beta2'])*(dw**2)
+    mt = config['m'] / (1-config['beta1']**config['t'])
+    vt = config['v'] / (1-config['beta2']**config['t'])
+    next_w = w - config['learning_rate'] * mt / (np.sqrt(vt) + config['epsilon'])
+    
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
