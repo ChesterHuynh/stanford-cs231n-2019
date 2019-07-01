@@ -390,8 +390,41 @@ def layernorm_forward(x, gamma, beta, ln_param):
     # the batch norm code and leave it almost unchanged?                      #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+    
+    # Transpose X to use BN code
+    x = x.T
+    
+    # Step 1: calculate mean
+    mu = np.mean(x, axis=0)
 
-    pass
+    # Step 2: compute residuals
+    xmu = x - mu
+
+    # Step 3: intermediate computation for variance
+    sq = xmu ** 2
+
+    # Step 4: calculate variance
+    var = np.var(x, axis=0)
+
+    # Step 5: add eps for numerical stability, then sqrt
+    sqrtvar = np.sqrt(var + eps)
+
+    # Step 6: inverse sqrtvar
+    ivar = 1./sqrtvar
+
+    # Step 7: normalized input
+    xhat = xmu * ivar
+    
+    # Transpose back to (N, D)
+    xhat = xhat.T
+
+    # Step 8: now the two transformation steps
+    gammax = gamma * xhat
+
+    # Step 9:
+    out = gammax + beta
+
+    cache = (xhat, gamma, xmu, ivar, sqrtvar, var, eps)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -426,7 +459,28 @@ def layernorm_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    
+    xhat, gamma, xmu, ivar, sqrtvar, var, eps = cache
+    dbeta = np.sum(dout, axis=0)
+    dgamma = np.sum(dout * xhat, axis=0)
+    dxhat = dout * gamma # N x D
+    
+    # Transpose dxhat and xhat back to (N, D)
+    xhat = xhat.T
+    dxhat = dxhat.T
+    N, D = xhat.shape
+    
+    divar = np.sum(dxhat * xmu, axis=0) # (D, )
+    dxmu1 = dxhat * ivar # N X D
+    dsqrtvar = -1. / (sqrtvar**2) * divar
+    dvar = 0.5 * dsqrtvar / np.sqrt(var + eps)
+    dsq = np.ones((N, D))/N * dvar
+    dxmu2 = 2 * dsq * xmu
+    dmu = -1 * np.sum(dxmu1 + dxmu2, axis=0)
+    dx1 = dxmu1 + dxmu2
+    dx2 = np.ones((N, D))/N * dmu
+    dx = dx1 + dx2
+    dx = dx.T
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -475,7 +529,8 @@ def dropout_forward(x, dropout_param):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        mask = (np.random.rand(*x.shape) < p) / p
+        out = x * mask
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
@@ -487,7 +542,7 @@ def dropout_forward(x, dropout_param):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        out = x
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
@@ -518,7 +573,7 @@ def dropout_backward(dout, cache):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        dx = dout * mask
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
