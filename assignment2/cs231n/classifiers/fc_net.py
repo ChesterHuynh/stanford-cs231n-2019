@@ -314,7 +314,7 @@ class FullyConnectedNet(object):
                 aff_out, aff_cache = affine_forward(out, self.params[W_i], self.params[b_i])
                 ln_out, ln_cache = layernorm_forward(aff_out, self.params['gamma%d' % (i+1)], 
                                                      self.params['beta%d' % (i+1)], 
-                                                     self.ln_params[i])
+                                                     self.bn_params[i])
                 out, relu_cache = relu_forward(ln_out)
                 caches[i+1] = (aff_cache, ln_cache, relu_cache)
             else:
